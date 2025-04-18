@@ -11,3 +11,23 @@
 ### 安装依赖
 ```bash
 pip install -r requirements.txt
+
+### 安装依赖
+```json
+{
+  "mcpServers": {
+    "textin-pdf-parser": {
+      "isActive": false,
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "C:/Users/User/Desktop/mcp_pdf_parser.py"
+      ],
+      "env": {
+        "TEXTIN_APP_ID": "xxxxxxxxxxx",
+        "TEXTIN_APP_SECRET": "xxxxxxxxxx"
+      },
+      "name": "textin-pdf-parser"
+    }
+  }
+}
