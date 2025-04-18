@@ -1,6 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 import requests
 import json
+import os
 from typing import Optional
 
 mcp = FastMCP("PDF Parser Service")
@@ -12,10 +13,8 @@ def get_file_content(filePath):
 @mcp.tool()
 def parse_pdf(
     file_path: str,
-    app_id: str,  # 新增：调用时传入的app_id参数
-    app_secret: str,  # 新增：调用时传入的app_secret参数
     is_url: bool = False,
-    pdf_pwd: Optional[str] = None,  # 使用Optional明确表示可为None
+    pdf_pwd: Optional[str] = None,
     dpi: int = 144,
     page_start: int = 0,
     page_count: int = 1000,
@@ -25,8 +24,6 @@ def parse_pdf(
     """
     PDF转Markdown工具
     :param file_path: PDF文件路径或URL
-    :param app_id: TextIn应用的APP ID
-    :param app_secret: TextIn应用的Secret Code
     :param is_url: 是否为URL
     :param pdf_pwd: PDF密码(可选)
     :param dpi: 分辨率(默认144)
@@ -36,6 +33,12 @@ def parse_pdf(
     :param parse_mode: 解析模式(默认'scan')
     :return: 解析结果
     """
+    # 从环境变量获取凭证
+    app_id = os.getenv("TEXTIN_APP_ID")
+    app_secret = os.getenv("TEXTIN_APP_SECRET")
+    if not app_id or not app_secret:
+        return {"error": "Missing TEXTIN_APP_ID or TEXTIN_APP_SECRET in environment variables"}
+
     options = {
         'pdf_pwd': pdf_pwd,
         'dpi': dpi,
@@ -50,8 +53,8 @@ def parse_pdf(
     }
     
     headers = {
-        'x-ti-app-id': app_id,  # 使用传入的app_id
-        'x-ti-secret-code': app_secret  # 使用传入的app_secret
+        'x-ti-app-id': app_id,
+        'x-ti-secret-code': app_secret
     }
     
     url = 'https://api.textin.com/ai/service/v1/pdf_to_markdown'
@@ -63,8 +66,12 @@ def parse_pdf(
         image = get_file_content(file_path)
         headers['Content-Type'] = 'application/octet-stream'
 
-    resp = requests.post(url, data=image, headers=headers, params=options)
-    return json.loads(resp.text)
+    try:
+        resp = requests.post(url, data=image, headers=headers, params=options)
+        resp.raise_for_status()
+        return json.loads(resp.text)
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')
